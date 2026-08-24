@@ -1,7 +1,294 @@
-<div class="header">
-  <div class="title">Ri_rail AI</div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <button class="clear-button" onclick="clearChat()">
-    🗑️
-  </button>
+<title>Ri_rail AI</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #bdbdbd;
+  color: #111;
+}
+
+.app {
+  max-width: 600px;
+  height: 100vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  background: #bdbdbd;
+}
+
+/* HEADER */
+.header {
+  height: 65px;
+  padding: 15px 18px;
+  background: #18a558;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 21px;
+  font-weight: bold;
+}
+
+/* TOMBOL HAPUS */
+.clear-button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.clear-button:active {
+  transform: scale(0.9);
+}
+
+/* CHAT */
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.message {
+  max-width: 82%;
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-radius: 15px;
+  line-height: 1.45;
+  word-wrap: break-word;
+}
+
+.ai {
+  background: #eeeeee;
+  color: #111;
+  margin-right: auto;
+}
+
+.user {
+  background: #18a558;
+  color: white;
+  margin-left: auto;
+}
+
+/* INPUT */
+.bottom {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: #bdbdbd;
+}
+
+input {
+  flex: 1;
+  border: none;
+  outline: none;
+  border-radius: 25px;
+  padding: 14px 17px;
+  background: white;
+  color: #111;
+  font-size: 15px;
+}
+
+input::placeholder {
+  color: #777;
+}
+
+/* TOMBOL KIRIM */
+.send-button {
+  width: 50px;
+  height: 50px;
+  border: none;
+  border-radius: 50%;
+  background: #18a558;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.send-button:active {
+  transform: scale(0.94);
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+
+    <div class="title">
+      Ri_rail AI
+    </div>
+
+    <button
+      class="clear-button"
+      onclick="clearChat()"
+      title="Hapus seluruh chat">
+      🗑️
+    </button>
+
+  </div>
+
+
+  <div class="chat" id="chat">
+
+    <div class="message ai">
+      Halo! 👋<br><br>
+      Saya <b>Ri_rail AI</b> 🚆<br><br>
+      Ada yang ingin kamu tanyakan?
+    </div>
+
+  </div>
+
+
+  <div class="bottom">
+
+    <input
+      id="input"
+      type="text"
+      placeholder="Tulis pesan..."
+      onkeydown="handleEnter(event)"
+    >
+
+    <button
+      class="send-button"
+      type="button"
+      onclick="sendMessage()">
+      ➤
+    </button>
+
+  </div>
+
 </div>
+
+
+<script>
+
+async function sendMessage() {
+
+  const input = document.getElementById("input");
+  const chat = document.getElementById("chat");
+
+  const text = input.value.trim();
+
+  if (!text) return;
+
+
+  // Pesan pengguna
+  const user = document.createElement("div");
+
+  user.className = "message user";
+  user.textContent = text;
+
+  chat.appendChild(user);
+
+  input.value = "";
+
+  chat.scrollTop = chat.scrollHeight;
+
+
+  // Loading AI
+  const loading = document.createElement("div");
+
+  loading.className = "message ai";
+  loading.textContent = "Ri_rail AI sedang berpikir...";
+
+  chat.appendChild(loading);
+
+  chat.scrollTop = chat.scrollHeight;
+
+
+  try {
+
+    const response = await fetch("/api/chat", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        message: text
+      })
+
+    });
+
+
+    const data = await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error || "Terjadi kesalahan"
+      );
+
+    }
+
+
+    loading.textContent =
+      data.reply || "Tidak ada jawaban.";
+
+  }
+
+
+  catch (error) {
+
+    console.error(error);
+
+    loading.textContent =
+      "Ri_rail AI mengalami kesalahan.";
+
+  }
+
+
+  chat.scrollTop = chat.scrollHeight;
+
+}
+
+
+/* ENTER UNTUK KIRIM */
+function handleEnter(event) {
+
+  if (event.key === "Enter") {
+
+    event.preventDefault();
+
+    sendMessage();
+
+  }
+
+}
+
+
+/* HAPUS SELURUH CHAT */
+function clearChat() {
+
+  const chat = document.getElementById("chat");
+
+  chat.innerHTML = "";
+
+}
+
+</script>
+
+</body>
+</html>
