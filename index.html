@@ -214,8 +214,22 @@ async function sendMessage() {
     loading.textContent = "Maaf, terjadi kesalahan. Coba lagi.";
   }
 
+  <div class="bottom">
+
+  <input
+    id="input"
+    type="text"
+    placeholder="Tulis pesan..."
+  >
+
+  <button type="button" onclick="sendMessage()">➤</button>
+
+</div>
+  }
+
   chat.scrollTop = chat.scrollHeight;
 }
+  
 </script>
 
 </body>
