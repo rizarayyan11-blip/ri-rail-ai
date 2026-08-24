@@ -12,19 +12,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body || {};
+    const message = req.body?.message;
 
-    if (!message || !message.trim()) {
+    if (!message || typeof message !== "string") {
       return res.status(400).json({
-        error: "Pesan kosong"
+        error: "Pesan tidak valid"
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "OPENAI_API_KEY belum terbaca oleh Vercel"
       });
     }
 
     const response = await client.responses.create({
       model: "gpt-5.6-luna",
       instructions:
-        "Kamu adalah Ri_rail AI, asisten AI bertema perkeretaapian. Jawab dengan ramah, jelas, dan gunakan bahasa Indonesia.",
-      input: message.trim()
+        "Kamu adalah Ri_rail AI, asisten AI tentang perkeretaapian. Jawab dalam bahasa Indonesia dengan ramah dan jelas.",
+      input: message
     });
 
     return res.status(200).json({
@@ -32,10 +38,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("OpenAI error:", error);
+    console.error("ERROR OPENAI:", error);
 
     return res.status(500).json({
-      error: error.message || "Terjadi kesalahan pada server"
+      error: error?.message || "OpenAI API error"
     });
   }
 }
