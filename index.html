@@ -10,13 +10,20 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  width: 100%;
+  height: 100%;
   font-family: Arial, sans-serif;
   background: #bdbdbd;
 }
 
+body {
+  overflow: hidden;
+}
+
 .app {
+  width: 100%;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -25,6 +32,7 @@ body {
 /* HEADER */
 .header {
   height: 60px;
+  min-height: 60px;
   background: #18a558;
   display: flex;
   align-items: center;
@@ -33,13 +41,15 @@ body {
 }
 
 .title {
+  color: white;
   font-size: 21px;
   font-weight: bold;
 }
 
-.delete {
+.delete-button {
   border: 0;
   background: transparent;
+  color: white;
   font-size: 22px;
   cursor: pointer;
 }
@@ -47,21 +57,25 @@ body {
 /* CHAT */
 .chat {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 15px;
 }
 
 .message {
-  max-width: 80%;
+  max-width: 82%;
+  width: fit-content;
   padding: 11px 14px;
   margin-bottom: 10px;
-  border-radius: 15px;
+  border-radius: 16px;
   line-height: 1.45;
-  animation: muncul 0.25s ease;
+  word-break: break-word;
+  animation: appear 0.2s ease;
 }
 
 .ai {
   background: #eeeeee;
+  color: #111;
   margin-right: auto;
 }
 
@@ -71,10 +85,10 @@ body {
   margin-left: auto;
 }
 
-@keyframes muncul {
+@keyframes appear {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(7px);
   }
 
   to {
@@ -83,10 +97,12 @@ body {
   }
 }
 
-/* ANIMASI BERPIKIR */
+/* TYPING */
 .typing {
   display: flex;
   gap: 4px;
+  align-items: center;
+  height: 18px;
 }
 
 .dot {
@@ -94,45 +110,51 @@ body {
   height: 6px;
   background: #777;
   border-radius: 50%;
-  animation: titik 1s infinite;
+  animation: dot 1s infinite;
 }
 
 .dot:nth-child(2) {
-  animation-delay: 0.15s;
+  animation-delay: .15s;
 }
 
 .dot:nth-child(3) {
-  animation-delay: 0.3s;
+  animation-delay: .3s;
 }
 
-@keyframes titik {
-  0%, 100% {
-    opacity: 0.3;
+@keyframes dot {
+  0%, 60%, 100% {
+    opacity: .3;
+    transform: translateY(0);
   }
 
-  50% {
+  30% {
     opacity: 1;
+    transform: translateY(-3px);
   }
 }
 
 /* INPUT */
 .bottom {
+  min-height: 70px;
   display: flex;
+  align-items: center;
   gap: 8px;
   padding: 10px;
   background: #bdbdbd;
 }
 
-input {
+#input {
   flex: 1;
+  min-width: 0;
+  height: 50px;
   border: 0;
   outline: 0;
   border-radius: 25px;
-  padding: 13px 16px;
+  padding: 0 17px;
   font-size: 15px;
 }
 
-.send {
+.send-button {
   width: 50px;
   height: 50px;
   border: 0;
@@ -143,8 +165,8 @@ input {
   cursor: pointer;
 }
 
-.send:active {
-  transform: scale(0.92);
+.send-button:disabled {
+  opacity: .55;
 }
 </style>
 </head>
@@ -156,21 +178,22 @@ input {
   <div class="header">
     <div class="title">Ri_rail AI</div>
 
-    <button class="delete" onclick="hapusChat()">
+    <button
+      class="delete-button"
+      type="button"
+      onclick="clearChat()">
       🗑️
     </button>
   </div>
-
 
   <div class="chat" id="chat">
 
     <div class="message ai">
       Halo! 👋<br>
-      Saya Ri_rail AI 🚆
+      Saya <b>Ri_rail AI</b> 🚆
     </div>
 
   </div>
-
 
   <div class="bottom">
 
@@ -178,12 +201,13 @@ input {
       id="input"
       type="text"
       placeholder="Tulis pesan..."
-      onkeydown="enterKirim(event)"
-    >
+      autocomplete="off">
 
     <button
-      class="send"
-      onclick="kirim()">
+      id="sendButton"
+      class="send-button"
+      type="button"
+      onclick="sendMessage()">
       ➤
     </button>
 
@@ -191,58 +215,87 @@ input {
 
 </div>
 
-
 <script>
 
-async function kirim() {
+const input = document.getElementById("input");
+const chat = document.getElementById("chat");
+const sendButton = document.getElementById("sendButton");
 
-  const input = document.getElementById("input");
-  const chat = document.getElementById("chat");
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-  const pesan = input.value.trim();
+function scrollChat() {
+  chat.scrollTop = chat.scrollHeight;
+}
 
-  if (!pesan) return;
+function addMessage(text, type) {
+  const message = document.createElement("div");
 
+  message.className = "message " + type;
+  message.textContent = text;
 
-  /* PESAN USER */
-  const user = document.createElement("div");
+  chat.appendChild(message);
 
-  user.className = "message user";
-  user.textContent = pesan;
+  scrollChat();
 
-  chat.appendChild(user);
+  return message;
+}
+
+function addTyping() {
+  const message = document.createElement("div");
+
+  message.className = "message ai";
+
+  message.innerHTML =
+    '<div class="typing">' +
+      '<span class="dot"></span>' +
+      '<span class="dot"></span>' +
+      '<span class="dot"></span>' +
+    '</div>';
+
+  chat.appendChild(message);
+
+  scrollChat();
+
+  return message;
+}
+
+async function typeAnswer(element, text) {
+
+  element.textContent = "";
+
+  for (let i = 0; i < text.length; i++) {
+
+    element.textContent += text[i];
+
+    scrollChat();
+
+    await sleep(15);
+  }
+}
+
+async function sendMessage() {
+
+  const text = input.value.trim();
+
+  if (!text || sendButton.disabled) {
+    return;
+  }
+
+  addMessage(text, "user");
 
   input.value = "";
 
-  chat.scrollTop = chat.scrollHeight;
+  sendButton.disabled = true;
 
+  await sleep(250);
 
-  /* JEDA SEBENTAR */
-  await new Promise(function(resolve) {
-    setTimeout(resolve, 250);
-  });
-
-
-  /* ANIMASI AI */
-  const loading = document.createElement("div");
-
-  loading.className = "message ai";
-
-  loading.innerHTML =
-    '<div class="typing">' +
-    '<span class="dot"></span>' +
-    '<span class="dot"></span>' +
-    '<span class="dot"></span>' +
-    '</div>';
-
-  chat.appendChild(loading);
-
-  chat.scrollTop = chat.scrollHeight;
-
+  const typing = addTyping();
 
   try {
 
-    /* PANGGIL BACKEND */
+    /* MEMANGGIL BACKEND VERCEL */
     const response = await fetch("/api/chat", {
 
       method: "POST",
@@ -252,93 +305,63 @@ async function kirim() {
       },
 
       body: JSON.stringify({
-        message: pesan
+        message: text
       })
 
     });
 
-
     const data = await response.json();
-
 
     if (!response.ok) {
       throw new Error(
-        data.error || "Terjadi kesalahan"
+        data.error || "Backend error"
       );
     }
 
-
-    /* JEDA SEBELUM JAWABAN */
-    await new Promise(function(resolve) {
-      setTimeout(resolve, 250);
-    });
-
-
-    /* HAPUS ANIMASI */
-    loading.innerHTML = "";
-
-
-    /* JAWABAN AI */
-    const jawaban =
-      data.reply || "Tidak ada jawaban.";
-
-    let i = 0;
-
-
-    /* TULIS PERLAHAN */
-    function ketik() {
-
-      if (i < jawaban.length) {
-
-        loading.textContent += jawaban.charAt(i);
-
-        i++;
-
-        chat.scrollTop =
-          chat.scrollHeight;
-
-        setTimeout(ketik, 18);
-
-      }
-
+    if (!data.reply) {
+      throw new Error(
+        "Backend tidak mengirim reply."
+      );
     }
 
-    ketik();
+    await sleep(250);
 
-  }
+    await typeAnswer(
+      typing,
+      data.reply
+    );
 
-
-  catch (error) {
+  } catch (error) {
 
     console.error(error);
 
-    loading.textContent =
-      "Ri_rail AI mengalami kesalahan.";
+    typing.textContent =
+      "Error: " + error.message;
 
   }
 
+  sendButton.disabled = false;
+
+  input.focus();
+
+  scrollChat();
 }
 
-
-/* ENTER */
-function enterKirim(event) {
+input.addEventListener("keydown", function(event) {
 
   if (event.key === "Enter") {
 
     event.preventDefault();
 
-    kirim();
+    sendMessage();
 
   }
 
-}
+});
 
-
-/* HAPUS CHAT */
-function hapusChat() {
-
-  document.getElementById("chat").innerHTML = "";
-
+function clearChat() {
+  chat.innerHTML = "";
+  input.focus();
 }
 
 </script>
