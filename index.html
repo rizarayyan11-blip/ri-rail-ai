@@ -168,6 +168,54 @@ function sendMessage() {
   chat.scrollTop = chat.scrollHeight;
 }
 
+<script>
+async function sendMessage() {
+  const input = document.getElementById("input");
+  const chat = document.getElementById("chat");
+
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  const user = document.createElement("div");
+  user.className = "message user";
+  user.textContent = text;
+  chat.appendChild(user);
+
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
+
+  const loading = document.createElement("div");
+  loading.className = "message ai";
+  loading.textContent = "Ri_rail AI sedang berpikir...";
+  chat.appendChild(loading);
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: text
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Terjadi kesalahan");
+    }
+
+    loading.textContent = data.reply;
+
+  } catch (error) {
+    console.error(error);
+    loading.textContent = "Maaf, terjadi kesalahan. Coba lagi.";
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
 </script>
 
 </body>
